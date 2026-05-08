@@ -5,11 +5,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from parser import extract_resume_text
-from gemini_client import generate_resume_stream, chat_stream, generate_cover_letter_stream, analyse_match_stream, edit_section_stream
 
 # Load environment variables from .env file
 load_dotenv()
+
+from parser import extract_resume_text
+from gemini_client import generate_resume_stream, chat_stream, generate_cover_letter_stream, analyse_match_stream, edit_section_stream
+
+
 
 # Initialize FastAPI app
 app = FastAPI(title="Resume AI API", version="1.0.0")
@@ -105,12 +108,16 @@ async def generate(
         raise HTTPException(status_code=422, detail="Could not extract text from the uploaded file.")
 
     def event_stream():
-        try:
-            for chunk in generate_resume_stream(resume_text, job_description, extra_prompt):
-                yield f"data: {json.dumps({'text': chunk})}\n\n"
-            yield f"data: {json.dumps({'done': True, 'resume_text': resume_text})}\n\n"
-        except Exception as e:
-            yield f"data: {json.dumps(classify_error(e))}\n\n"
+            try:
+                for chunk in generate_resume_stream(resume_text, job_description, extra_prompt):
+                    yield f"data: {json.dumps({'text': chunk})}\n\n"
+                # Encode resume_text as base64 to avoid JSON newline escaping issues
+                import base64
+                encoded = base64.b64encode(resume_text.encode('utf-8')).decode('ascii')
+                yield f"data: {json.dumps({'done': True, 'resume_text_b64': encoded})}\n\n"
+            except Exception as e:
+                yield f"data: {json.dumps(classify_error(e))}\n\n"
+
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
