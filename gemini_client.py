@@ -26,7 +26,7 @@ When the user asks for follow-up edits, apply the requested changes to the most 
 Always return the full updated resume, formatted in plain text with clear sections."""
 
 #gemini model
-MODEL = "gemini-3.1-flash-lite-preview"
+MODEL = "gemini-3.1-flash-lite"
 
 def get_model_config(extra_system: str = ""):
     return types.GenerateContentConfig(
